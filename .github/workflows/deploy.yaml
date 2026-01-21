@@ -1,4 +1,4 @@
-name: Phoenix Pipeline
+name: Phoenix K8s Pipeline
 
 on:
   push:
@@ -21,14 +21,16 @@ jobs:
 
   deploy:
     needs: build-and-push
-    runs-on: self-hosted  # <--- home server
+    runs-on: self-hosted
     steps:
-      - name: Pull and Restart
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Deploy to Cluster
         run: |
-          docker pull ${{ secrets.DOCKER_USERNAME }}/phoenix-app:latest
-          docker stop phoenix-container || true
-          docker rm phoenix-container || true
-          docker run -d --name phoenix-container -p 5000:5000 --restart always ${{ secrets.DOCKER_USERNAME }}/phoenix-app:latest
-      
-      - name: Cleanup
-        run: docker system prune -f
+          # 1. Send the blueprints to the Master Node
+          kubectl apply -f k8s/deployment.yaml
+          kubectl apply -f k8s/service.yaml
+          
+          # 2. Force the cluster to pull the new image (Zero Downtime Refresh)
+          kubectl rollout restart deployment/phoenix-deployment

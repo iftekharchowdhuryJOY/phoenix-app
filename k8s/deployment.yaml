@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: phoenix-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: phoenix
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels: 
+        app: phoenix
+    spec:
+      containers:
+        - name: phoenix
+          image: aitigerlab/phoenix-app:latest
+          ports:
+          - containerPort: 5000
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 5000
+            initialDelaySeconds: 10
+            periodSeconds: 5
