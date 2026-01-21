@@ -31,6 +31,7 @@ jobs:
           # 1. Send the blueprints to the Master Node
           kubectl apply -f k8s/deployment.yaml
           kubectl apply -f k8s/service.yaml
+          kubectl apply -f k8s/hpa.yaml
           
           # 2. Force the cluster to pull the new image (Zero Downtime Refresh)
           kubectl rollout restart deployment/phoenix-deployment
