@@ -1,0 +1,17 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: phoenix-ingress
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: phoenix.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: phoenix-service  # This must match your service name
+            port:
+              number: 80           # The Service port (usually 80), not container port
