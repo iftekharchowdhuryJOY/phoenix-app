@@ -30,6 +30,7 @@ kind: Deployment
 metadata:
   name: postgres
 spec:
+  replicas: 1
   selector:
     matchLabels:
       app: postgres
@@ -38,6 +39,8 @@ spec:
       labels:
         app: postgres
     spec:
+      nodeSelector:
+        kubernetes.io/hostname: k8s-worker-1
       containers:
       - name: postgres
         image: postgres:15
