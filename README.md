@@ -1,28 +1,21 @@
 # 🦅 The Phoenix Project: Kubernetes DevOps Platform
 
-A full-stack DevOps demonstration implementing a self-healing, auto-scaling web application on a bare-metal Kubernetes cluster. The project features a complete CI/CD pipeline, ingress networking with MetalLB, and a robust monitoring stack.
+A full-stack DevOps demonstration implementing a self-healing, auto-scaling web application on a bare-metal Kubernetes cluster. The project features a complete CI/CD pipeline, Zero-Trust ingress networking, and a robust monitoring stack.
 
 ## 🏗️ Architecture
 
 * **Application:** Python Flask Web App ("The Phoenix").
 * **Infrastructure:** 3-Node Kubernetes Cluster (1 Master, 2 Workers) on bare-metal KVM VMs.
-* **CI/CD:** GitHub Actions (Build -> Docker Hub -> Self-Hosted Runner Deploy).
-* **Networking:** NGINX Ingress Controller backed by MetalLB (Layer 2 Load Balancer).
+* **CI/CD:** GitHub Actions (Automated Build & Deploy Pipeline).
+* **Networking:** Cloudflare Tunnel (Edge)  MetalLB (L2 Load Balancer)  NGINX Ingress.
 * **Observability:** Prometheus (Metrics Collection) & Grafana (Visualization).
 
 ## 🚀 Key Features
 
+* **Global Zero-Trust Access:** Exposed to the public internet via **Cloudflare Tunnel**, eliminating the need for open router ports or VPNs.
 * **Self-Healing:** Liveness probes automatically restart crashed containers and prevent broken deployments from receiving traffic.
 * **Zero-Downtime Deployments:** Rolling updates ensure the service remains available during code changes.
 * **Auto-Scaling (HPA):** Horizontal Pod Autoscaler automatically provisions new pods (from 1 to 10) based on CPU load spikes.
-* **Real-Time Monitoring:** Custom Grafana dashboards to visualize cluster health, CPU usage, and pod lifecycles.
-
-## 🛠️ Prerequisites
-
-* A Kubernetes Cluster (v1.28+)
-* `kubectl` configured to talk to the cluster.
-* Helm Package Manager installed.
-* A Docker Hub account.
 
 ## 📂 Project Structure
 
@@ -34,7 +27,7 @@ A full-stack DevOps demonstration implementing a self-healing, auto-scaling web 
 │   ├── deployment.yaml  # App Deployment & Liveness Probes
 │   ├── service.yaml     # Internal ClusterIP Service
 │   ├── hpa.yaml         # Horizontal Pod Autoscaler rules
-│   ├── ingress.yaml     # Routing rules (phoenix.local)
+│   ├── ingress.yaml     # Ingress Routing (aitigerlab.com)
 │   └── metallb-config.yaml # Load Balancer IP Pool
 ├── app.py               # Flask Application Source
 ├── Dockerfile           # Container definition
@@ -44,25 +37,19 @@ A full-stack DevOps demonstration implementing a self-healing, auto-scaling web 
 
 ## ⚙️ Setup & Deployment
 
-### 1. Configure Secrets
+### 1. Prerequisites
 
-In your GitHub Repository (Settings -> Secrets), add:
-
-* `DOCKER_USERNAME`: Your Docker Hub username.
-* `DOCKER_PASSWORD`: Your Docker Hub access token.
+* A Kubernetes Cluster (v1.28+)
+* Helm Package Manager installed.
+* `cloudflared` installed on the Host Node.
+* A Docker Hub account.
 
 ### 2. Install Infrastructure Components (One-Time Setup)
 
-**Install Ingress Controller:**
+**Install Ingress & Load Balancer:**
 
 ```bash
 helm install ingress-nginx ingress-nginx/ingress-nginx --namespace ingress-nginx --create-namespace
-
-```
-
-**Install MetalLB (Load Balancer):**
-
-```bash
 helm install metallb metallb/metallb --namespace metallb-system --create-namespace
 kubectl apply -f k8s/metallb-config.yaml
 
@@ -87,20 +74,15 @@ kubectl apply -f k8s/ingress.yaml
 
 ```
 
-## 🌐 Accessing the Application
+## 🌐 Global Access (Cloudflare Tunnel)
 
-### Setup Local DNS
+This project uses **Cloudflare Tunnel** to expose the internal Kubernetes Ingress to the public internet securely.
 
-Map the Load Balancer IP to the domain in your local `/etc/hosts` file (Linux/Mac) or `C:\Windows\System32\drivers\etc\hosts` (Windows):
+* **Public URL:** `https://aitigerlab.com`
+* **Security:** Traffic is encrypted from the Cloudflare Edge directly to the Cluster, bypassing local firewall ingress rules.
 
-```text
-192.168.122.240  phoenix.local
-
-```
-
-### Visit the App
-
-Open your browser and navigate to: **[http://phoenix.local](https://www.google.com/search?q=http://phoenix.local)**
+**Architecture Flow:**
+`User (HTTPS)`  `Cloudflare Edge`  `Secure Tunnel`  `Host Node`  `MetalLB`  `NGINX Ingress`  `Pod`
 
 ## 📊 Monitoring (Grafana)
 
@@ -111,16 +93,15 @@ kubectl get secret --namespace monitoring monitoring-grafana -o jsonpath="{.data
 ```
 
 
-2. **Port Forward:**
+2. **Access Dashboard:**
+Port-forward the Grafana service to your local machine:
 ```bash
-ssh -L 3000:localhost:3000 user@<server-ip>
-# Then on server:
 kubectl port-forward -n monitoring svc/monitoring-grafana 3000:80
 
 ```
 
 
-3. **Login:** Access `http://localhost:3000` (User: `admin`).
+Visit: `http://localhost:3000` (User: `admin`)
 
 ## 🧪 Testing Auto-Scaling
 
