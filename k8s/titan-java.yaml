@@ -14,10 +14,9 @@ spec:
     spec:
       containers:
       - name: titan
-        # We use a base Java image
-        image: amazoncorretto:8-alpine-jre
-        # This command simulates a heavy process keeping 400MB+ RAM busy
-        command: ["/bin/sh"]
-        args: ["-c", "java -XX:MaxRAM=600m -version; echo 'Titan Started'; sleep 3600"]
+        # Tomcat is a real Java Web Server. It eats RAM for breakfast.
+        image: tomcat:9-jdk17
         ports:
         - containerPort: 8080
+        # REMOVED the 'command' and 'args' lines. 
+        # We want the default Tomcat startup command.
