@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: titan-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: titan
+  template:
+    metadata:
+      labels:
+        app: titan
+    spec:
+      containers:
+      - name: titan
+        # We use a base Java image
+        image: openjdk:8-jre-alpine
+        # This command simulates a heavy process keeping 400MB+ RAM busy
+        command: ["/bin/sh"]
+        args: ["-c", "java -XX:MaxRAM=600m -version; echo 'Titan Started'; sleep 3600"]
+        ports:
+        - containerPort: 8080
