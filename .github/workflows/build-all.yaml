@@ -1,0 +1,45 @@
+name: Build and Push Microservices
+
+on:
+  push:
+    # Trigger if Docker files OR this workflow change
+    paths:
+      - 'docker/**'
+      - '.github/workflows/**'
+    branches:
+      - main
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    strategy:
+      # This is the "Matrix". It runs the steps below multiple times (in parallel!)
+      matrix:
+        include:
+          - service: titan
+            context: .
+            dockerfile: ./docker/titan/Dockerfile
+            image_name: titan-fix
+          - service: spartan
+            context: .
+            dockerfile: ./docker/spartan/Dockerfile
+            image_name: spartan-fix
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push ${{ matrix.service }}
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          push: true
+          # Tagging with 'latest' for now to keep it simple
+          tags: ${{ secrets.DOCKER_USERNAME }}/${{ matrix.image_name }}:latest
