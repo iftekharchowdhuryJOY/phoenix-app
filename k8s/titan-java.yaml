@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: titan
-        image: tomcat:9-jdk17
+        image: aitigerlab/titan-fix:v1 
         ports:
         - containerPort: 8080   # <--- Tomcat listens here
         resources:
