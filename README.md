@@ -1,124 +1,76 @@
-# 🦅 The Phoenix Project: Kubernetes DevOps Platform
+# 🐯 The Tiger Lab: Polyglot Microservices Platform
 
-A full-stack DevOps demonstration implementing a self-healing, auto-scaling web application on a bare-metal Kubernetes cluster. The project features a complete CI/CD pipeline, Zero-Trust ingress networking, and a robust monitoring stack.
+**Status:** Production (Stable)  
+**Infrastructure:** Bare Metal Kubernetes (K3s) on HP EliteDesk 800 G6  
+**Location:** Montreal, QC (Homelab)
+
+## 📖 Overview
+The Tiger Lab is a production-grade, polyglot microservices architecture running on bare metal. It demonstrates the orchestration of three distinct programming languages (Python, Java, .NET) into a unified platform, secured by Zero Trust network policies and automated via modern CI/CD pipelines.
+
+The platform is fully observable via Prometheus/Grafana and managed via GitOps (ArgoCD).
 
 ## 🏗️ Architecture
+**Ingress (Nginx) -> Routing Rules -> Microservices -> Pod Security**
 
-* **Application:** Python Flask Web App ("The Phoenix").
-* **Infrastructure:** 3-Node Kubernetes Cluster (1 Master, 2 Workers) on bare-metal KVM VMs.
-* **CI/CD:** GitHub Actions (Automated Build & Deploy Pipeline).
-* **Networking:** Cloudflare Tunnel (Edge)  MetalLB (L2 Load Balancer)  NGINX Ingress.
-* **Observability:** Prometheus (Metrics Collection) & Grafana (Visualization).
+| Service | Code Name | Language | Port | URL Path | Key Features |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Frontend** | `Phoenix` | Python (FastAPI) | 80 | `/` | Lightweight, rapid response. |
+| **Backend** | `Titan` | Java (Tomcat) | 8080 | `/titan` | Custom Docker image, Memory Limits (256Mi). |
+| **Service** | `Spartan` | .NET Core | 8080 | `/spartan` | Health Checks, Liveness Probes. |
 
-## 🚀 Key Features
+## 🛠️ Technology Stack
+* **Orchestration:** K3s (Lightweight Kubernetes)
+* **GitOps:** ArgoCD (Auto-sync from GitHub)
+* **CI/CD:** GitHub Actions (Matrix Strategy Build & Push)
+* **Container Registry:** Docker Hub
+* **Monitoring:** Prometheus (Metrics) & Grafana (Dashboards)
+* **Security:** Network Policies (Calico/Cilium), Zero Trust Architecture
+* **Hardware:** HP EliteDesk Mini (Intel i5-10400T, 32GB RAM)
 
-* **Global Zero-Trust Access:** Exposed to the public internet via **Cloudflare Tunnel**, eliminating the need for open router ports or VPNs.
-* **Self-Healing:** Liveness probes automatically restart crashed containers and prevent broken deployments from receiving traffic.
-* **Zero-Downtime Deployments:** Rolling updates ensure the service remains available during code changes.
-* **Auto-Scaling (HPA):** Horizontal Pod Autoscaler automatically provisions new pods (from 1 to 10) based on CPU load spikes.
+## 🛡️ Security & Hardening
+* **Zero Trust Networking:** All ingress traffic to the `Titan` backend is blocked by default using a `NetworkPolicy`.
+* **Whitelisting:** Only traffic originating from the `ingress-nginx` namespace is permitted to reach the backend.
+* **Resource Quotas:** All pods have strict `requests` and `limits` to prevent OOM (Out of Memory) kills and "Noisy Neighbor" issues.
+* **Liveness Probes:** configured for `.NET` and `Java` to automatically restart frozen services.
 
-## 📂 Project Structure
+## ⚙️ Automation (CI/CD)
+The project uses a **Matrix Workflow** in GitHub Actions to build Docker images in parallel.
 
+1.  **Trigger:** Push to `main` branch (filters for `docker/**` folders).
+2.  **Build:** GitHub Actions runner builds custom images for `titan` and `spartan`.
+3.  **Push:** Images are tagged `:latest` and pushed to Docker Hub.
+4.  **Deploy:** ArgoCD detects the update and syncs the cluster (Image Pull Policy: Always).
+
+## 🚀 Operational Commands
+
+### Check Cluster Status
 ```bash
-.
-├── .github/workflows/
-│   └── deploy.yaml      # CI/CD Pipeline definition
-├── k8s/
-│   ├── deployment.yaml  # App Deployment & Liveness Probes
-│   ├── service.yaml     # Internal ClusterIP Service
-│   ├── hpa.yaml         # Horizontal Pod Autoscaler rules
-│   ├── ingress.yaml     # Ingress Routing (aitigerlab.com)
-│   └── metallb-config.yaml # Load Balancer IP Pool
-├── app.py               # Flask Application Source
-├── Dockerfile           # Container definition
-└── requirements.txt     # Python dependencies
+kubectl get pods -A  # See all running services
+kubectl get ingress  # Check routing rules
 
 ```
 
-## ⚙️ Setup & Deployment
+### View Monitoring Dashboard
 
-### 1. Prerequisites
+* **Grafana:** Forward port `3000` (`kubectl port-forward -n monitoring svc/monitoring-grafana 3000:80`)
+* **ArgoCD:** Forward port `8080` (`kubectl port-forward -n argocd svc/argocd-server 8080:443`)
 
-* A Kubernetes Cluster (v1.28+)
-* Helm Package Manager installed.
-* `cloudflared` installed on the Host Node.
-* A Docker Hub account.
-
-### 2. Install Infrastructure Components (One-Time Setup)
-
-**Install Ingress & Load Balancer:**
+### Troubleshooting
 
 ```bash
-helm install ingress-nginx ingress-nginx/ingress-nginx --namespace ingress-nginx --create-namespace
-helm install metallb metallb/metallb --namespace metallb-system --create-namespace
-kubectl apply -f k8s/metallb-config.yaml
+# Check logs for the Java backend
+kubectl logs -l app=titan
 
-```
+# Check why a pod crashed (Previous instance)
+kubectl logs -l app=spartan --previous
 
-**Install Monitoring Stack:**
-
-```bash
-helm install monitoring prometheus-community/kube-prometheus-stack -n monitoring --create-namespace
-
-```
-
-### 3. Deploy the Application
-
-Pushing to the `main` branch triggers the GitHub Action pipeline. Alternatively, deploy manually:
-
-```bash
-kubectl apply -f k8s/deployment.yaml
-kubectl apply -f k8s/service.yaml
-kubectl apply -f k8s/hpa.yaml
-kubectl apply -f k8s/ingress.yaml
-
-```
-
-## 🌐 Global Access (Cloudflare Tunnel)
-
-This project uses **Cloudflare Tunnel** to expose the internal Kubernetes Ingress to the public internet securely.
-
-* **Public URL:** `https://aitigerlab.com`
-* **Security:** Traffic is encrypted from the Cloudflare Edge directly to the Cluster, bypassing local firewall ingress rules.
-
-**Architecture Flow:**
-`User (HTTPS)`  `Cloudflare Edge`  `Secure Tunnel`  `Host Node`  `MetalLB`  `NGINX Ingress`  `Pod`
-
-## 📊 Monitoring (Grafana)
-
-1. **Retrieve Admin Password:**
-```bash
-kubectl get secret --namespace monitoring monitoring-grafana -o jsonpath="{.data.admin-password}" | base64 --decode ; echo
+# Verify Network Policy (Test Access)
+kubectl exec -it hacker -- curl -v http://titan-service:8080  # Should Timeout
 
 ```
 
 
-2. **Access Dashboard:**
-Port-forward the Grafana service to your local machine:
-```bash
-kubectl port-forward -n monitoring svc/monitoring-grafana 3000:80
-
-```
+*Built with ❤️ and ☕ in Montreal.*
 
 
-Visit: `http://localhost:3000` (User: `admin`)
 
-## 🧪 Testing Auto-Scaling
-
-To simulate a traffic spike and trigger the HPA:
-
-```bash
-kubectl run -i --tty load-generator --rm --image=busybox --restart=Never -- /bin/sh -c "while true; do wget -q -O- http://phoenix-service; done"
-
-```
-
-*Watch the scaling in action:*
-
-```bash
-kubectl get hpa -w
-
-```
-
-## 📝 License
-
-This project is open-source and available for educational purposes.
