@@ -1,17 +1,38 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: phoenix-ingress
+  name: main-ingress
+  annotations:
+    # Rewrite /titan/something -> /something so the app understands it
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    nginx.ingress.kubernetes.io/use-regex: "true"
 spec:
   ingressClassName: nginx
   rules:
-  - host: aitigerlab.com
+  - host: aitigerlab.com   # <--- FIXED THIS
     http:
       paths:
-      - path: /
-        pathType: Prefix
+      # 1. Phoenix (Python) - Catches everything else (Home)
+      - path: /()(.*)
+        pathType: ImplementationSpecific
         backend:
           service:
-            name: phoenix-service  # This must match your service name
+            name: phoenix-service
             port:
-              number: 80           # The Service port (usually 80), not container port
+              number: 80
+      # 2. Titan (Java) - Catches /titan
+      - path: /titan(/|$)(.*)
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: titan-service
+            port:
+              number: 80
+      # 3. Spartan (.NET) - Catches /spartan
+      - path: /spartan(/|$)(.*)
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: spartan-service
+            port:
+              number: 80
