@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spartan-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: spartan
+  template:
+    metadata:
+      labels:
+        app: spartan
+    spec:
+      containers:
+      - name: spartan
+        # Official Microsoft .NET Sample App
+        image: mcr.microsoft.com/dotnet/samples:aspnetapp
+        ports:
+        - containerPort: 80
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "100m"
+          limits:
+            memory: "128Mi"
+            cpu: "250m"
+        # THE TRAP: We tell K8s to check a path that DOES NOT EXIST
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: spartan-service
+spec:
+  selector:
+    app: spartan
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
