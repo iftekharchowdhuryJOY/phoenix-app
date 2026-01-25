@@ -25,3 +25,14 @@ spec:
             memory: "256Mi"
         # REMOVED the 'command' and 'args' lines. 
         # We want the default Tomcat startup command.
+apiVersion: v1
+kind: Service
+metadata:
+  name: titan-service
+spec:
+  selector:
+    app: titan
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080  # <--- MUST BE 8080 for Tomcat
