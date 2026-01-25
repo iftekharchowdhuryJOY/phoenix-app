@@ -14,17 +14,15 @@ spec:
     spec:
       containers:
       - name: titan
-        # Tomcat is a real Java Web Server. It eats RAM for breakfast.
         image: tomcat:9-jdk17
         ports:
-        - containerPort: 8080
+        - containerPort: 8080   # <--- Tomcat listens here
         resources:
           requests:
             memory: "128Mi"
           limits:
             memory: "256Mi"
-        # REMOVED the 'command' and 'args' lines. 
-        # We want the default Tomcat startup command.
+---
 apiVersion: v1
 kind: Service
 metadata:
@@ -34,5 +32,5 @@ spec:
     app: titan
   ports:
     - protocol: TCP
-      port: 80
-      targetPort: 8080  # <--- MUST BE 8080 for Tomcat
+      port: 80          # <--- Service listens on 80
+      targetPort: 8080  # <--- Sends traffic to 8080
