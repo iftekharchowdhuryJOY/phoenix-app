@@ -14,8 +14,8 @@ spec:
     spec:
       containers:
       - name: spartan
-        # Official Microsoft .NET Sample App
-        image: mcr.microsoft.com/dotnet/samples:aspnetapp
+        image: aitigerlab/spartan-fix:latest
+        imagePullPolicy: always
         ports:
         - containerPort: 8080
         resources:
