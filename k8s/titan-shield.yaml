@@ -1,11 +1,20 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: deny-all-titan
+  name: protect-titan
 spec:
   podSelector:
     matchLabels:
       app: titan
   policyTypes:
   - Ingress
-  # No "ingress" rules means DENY EVERYTHING
+  ingress:
+  # RULE: Allow traffic from the Ingress Controller Namespace
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          role: ingress-gateway
+    # (Optional) We can be even more specific and ask for the pod label too:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: ingress-nginx
