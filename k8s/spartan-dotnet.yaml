@@ -28,7 +28,7 @@ spec:
         # THE TRAP: We tell K8s to check a path that DOES NOT EXIST
         livenessProbe:
           httpGet:
-            path: /healthz
+            path: /
             port: 80
           initialDelaySeconds: 5
           periodSeconds: 10
