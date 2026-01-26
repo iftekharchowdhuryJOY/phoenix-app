@@ -10,6 +10,7 @@ metadata:
     # Allow passing through SSL (Argo handles its own certs internally)
     nginx.ingress.kubernetes.io/ssl-passthrough: "true"
 spec:
+  ingressClassName: nginx
   rules:
   - host: argocd.aitigerlab.com
     http:
