@@ -1,0 +1,143 @@
+---
+# 1. Create Namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: homepage
+
+---
+# 2. Service Account (Identity Card for the app)
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: homepage
+  namespace: homepage
+
+---
+# 3. Permissions (Allow it to see Cluster Health)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: homepage-cluster-reader
+rules:
+  - apiGroups: [""]
+    resources: ["nodes", "pods", "namespaces", "services"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: homepage-cluster-reader-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: homepage-cluster-reader
+subjects:
+  - kind: ServiceAccount
+    name: homepage
+    namespace: homepage
+
+---
+# 4. Configuration (The Dashboard Layout)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: homepage-config
+  namespace: homepage
+data:
+  # General Settings
+  settings.yaml: |
+    title: TigerLab Dashboard
+    background:
+      image: https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=2070&auto=format&fit=crop
+      opacity: 0.5
+    layout:
+      External:
+        style: row
+        columns: 3
+      Internal:
+        style: row
+        columns: 3
+
+  # The "Widgets" (Top of screen stats)
+  widgets.yaml: |
+    - kubernetes:
+        cluster:
+          show: true
+          cpu: true
+          memory: true
+          showLabel: true
+          label: "Kubernetes Cluster"
+    - resources:
+        cpu: true
+        memory: true
+        disk: true
+        label: "Homepage Pod"
+
+  # Your Apps (The Icons)
+  services.yaml: |
+    - External:
+        - Phoenix App:
+            icon: microsoft-windows.png
+            href: "https://phoenix.aitigerlab.com"
+            description: "My .NET Application"
+            ping: "https://phoenix.aitigerlab.com"
+        - Grafana:
+            icon: grafana.png
+            href: "https://grafana.aitigerlab.com"
+            description: "Metrics & Alerts"
+        - ArgoCD:
+            icon: argo.png
+            href: "https://argocd.aitigerlab.com"
+            description: "GitOps Deployment"
+
+    - Internal:
+        - Longhorn:
+            icon: longhorn.png
+            href: "#"
+            description: "Storage (Future)"
+
+---
+# 5. The Deployment (The actual app)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: homepage
+  namespace: homepage
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: homepage
+  template:
+    metadata:
+      labels:
+        app: homepage
+    spec:
+      serviceAccountName: homepage
+      containers:
+        - name: homepage
+          image: ghcr.io/gethomepage/homepage:latest
+          ports:
+            - containerPort: 3000
+          volumeMounts:
+            - name: config
+              mountPath: /app/config
+      volumes:
+        - name: config
+          configMap:
+            name: homepage-config
+
+---
+# 6. The Service (Open the internal door)
+apiVersion: v1
+kind: Service
+metadata:
+  name: homepage
+  namespace: homepage
+spec:
+  ports:
+    - port: 80
+      targetPort: 3000
+  selector:
+    app: homepage
