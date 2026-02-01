@@ -99,6 +99,7 @@ data:
 
 ---
 # 5. The Deployment (The actual app)
+# 5. The Deployment (Updated with Fixes)
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -120,13 +121,23 @@ spec:
           image: ghcr.io/gethomepage/homepage:latest
           ports:
             - containerPort: 3000
+          env:
+            # FIX 2: Allow your domain
+            - name: HOMEPAGE_ALLOWED_HOSTS
+              value: "dashboard.aitigerlab.com,home.aitigerlab.com,127.0.0.1"
           volumeMounts:
             - name: config
               mountPath: /app/config
+            # FIX 1: Give it a writable folder for logs
+            - name: logs
+              mountPath: /app/config/logs
       volumes:
         - name: config
           configMap:
             name: homepage-config
+        # FIX 1: Create a temporary scratchpad for logs
+        - name: logs
+          emptyDir: {}
 
 ---
 # 6. The Service (Open the internal door)
