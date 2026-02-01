@@ -98,8 +98,7 @@ data:
             description: "Storage (Future)"
 
 ---
-# 5. The Deployment (The actual app)
-# 5. The Deployment (Updated with Fixes)
+# 5. The Deployment (Fixed with subPaths)
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -119,23 +118,31 @@ spec:
       containers:
         - name: homepage
           image: ghcr.io/gethomepage/homepage:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 3000
           env:
-            # FIX 2: Allow your domain
+            # FIX: Allow ALL hosts (easier for homelab)
             - name: HOMEPAGE_ALLOWED_HOSTS
-              value: "dashboard.aitigerlab.com,home.aitigerlab.com,127.0.0.1"
+              value: "*"
           volumeMounts:
+            # FIX: Mount individual files so the folder remains writable
             - name: config
-              mountPath: /app/config
-            # FIX 1: Give it a writable folder for logs
+              mountPath: /app/config/settings.yaml
+              subPath: settings.yaml
+            - name: config
+              mountPath: /app/config/services.yaml
+              subPath: services.yaml
+            - name: config
+              mountPath: /app/config/widgets.yaml
+              subPath: widgets.yaml
+            # Create a scratchpad for logs
             - name: logs
               mountPath: /app/config/logs
       volumes:
         - name: config
           configMap:
             name: homepage-config
-        # FIX 1: Create a temporary scratchpad for logs
         - name: logs
           emptyDir: {}
 
