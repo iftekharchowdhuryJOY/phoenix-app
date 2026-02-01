@@ -1,0 +1,46 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: monitoring
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://prometheus-community.github.io/helm-charts
+    chart: kube-prometheus-stack
+    targetRevision: 56.6.0
+    helm:
+      parameters:
+      # --- RAM SAVING MODE ACTIVATED ---
+      
+      # 1. Disable Hard Drive requirements (Use RAM disk)
+      - name: prometheus.prometheusSpec.storageSpec.emptyDir.medium
+        value: "Memory"
+      
+      # 2. Kill AlertManager (Saves ~50MB RAM + CPU)
+      - name: alertmanager.enabled
+        value: "false"
+
+      # 3. Put Grafana on a strict diet (Limit to 256MB)
+      - name: grafana.resources.limits.memory
+        value: "256Mi"
+      - name: grafana.resources.requests.memory
+        value: "128Mi"
+      
+      # 4. Set default password for easier login
+      - name: grafana.adminPassword
+        value: "admin"
+
+      # 5. Only keep 2 days of history (Keeps the index small)
+      - name: prometheus.prometheusSpec.retention
+        value: "2d"
+        
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - CreateNamespace=true
