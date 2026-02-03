@@ -21,4 +21,3 @@ spec:
         command: ["cloudflared", "tunnel", "run"]
         args:
         - "--token"
-        - "eyJhIjoiMjEzNmZlMjdjZTMxZTI0ODI4OTllNDhjNjIxZTRlZDYiLCJ0IjoiZWNjMjk4MWQtMGY5OS00YjNkLTg3YTYtYjYyMWQ2MjE4NjZhIiwicyI6IiszL3p4SU9wTlQ4aXk5b1hMQUdkdjRYc2x0dWFHdXp1UWZjejl6bThHRTA9In0="
