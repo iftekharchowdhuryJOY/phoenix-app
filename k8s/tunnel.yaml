@@ -18,6 +18,14 @@ spec:
       containers:
       - name: cloudflared
         image: cloudflare/cloudflared:latest
-        command: ["cloudflared", "tunnel", "run"]
         args:
-        - "--token"
+        - tunnel
+        - --no-autoupdate
+        - run
+        # SECURE CHANGE: Token argument removed. Using Env Var instead.
+        env:
+        - name: TUNNEL_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: tunnel-credentials
+              key: token
