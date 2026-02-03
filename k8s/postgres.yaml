@@ -7,7 +7,7 @@ metadata:
 type: Opaque
 stringData:
   # CHANGE THIS PASSWORD! (But remember it)
-  postgres-password: "tiger-lab-secret"
+  postgres-password: 
 
 ---
 # 2. The Disk Claim (PVC)
