@@ -9,5 +9,5 @@ metadata:
 type: Opaque
 stringData:
   # This hash = "password"
-  admin.password: "$2a$10$rRyBsGSHK6.uc8fntPwVIuLVHgsAhAX7TcdrqW/RADU0uh7CaCh22"
-  admin.passwordMtime: "2026-01-26T12:00:00Z"
+  admin.password: 
+  admin.passwordMtime: 
